@@ -1,0 +1,15 @@
+﻿
+
+
+
+<form method="post" enctype="multipart/form-data">
+    <div class="row">
+        <label>Select File</label>
+        <input type="file" name="file" />
+    </div>
+    <div class="row" style="padding-top:10px">
+        <div class="col-3">
+            <input type="submit" asp-controller="Home" asp-action="ExcelReader" class="btn btn-primary"value="Upload Excel" />
+        </div>
+    </div>
+</form>
