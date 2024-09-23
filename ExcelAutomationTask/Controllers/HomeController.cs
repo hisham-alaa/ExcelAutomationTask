@@ -77,7 +77,7 @@ namespace ExcelAutomationTask.Controllers
                         {
                             workbook.SaveAs(memoryStream);
                             memoryStream.Position = 0;
-                            return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ModifiedSheet.xlsx");
+                            return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Modified_{file.FileName}");
                         }
                     }
                 }
