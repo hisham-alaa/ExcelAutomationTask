@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using ExcelAutomationTask.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.IO;
 
 namespace ExcelAutomationTask.Controllers
 {
@@ -56,22 +57,26 @@ namespace ExcelAutomationTask.Controllers
                     using (var workbook = new XLWorkbook(stream))
                     {
                         var worksheet = workbook.Worksheet(1);
+                        double SumOfTotalAfterTaxing = 0;
                         // Add new column and compute values
                         worksheet.Column(worksheet.LastColumnUsed().ColumnNumber() + 1).Cell(1).Value = "Total Value before Taxing";
                         for (int i = 2; i <= worksheet.LastRowUsed().RowNumber(); i++)
                         {
-                            worksheet.Cell(i, worksheet.LastColumnUsed().ColumnNumber()).Value = ComputeTotalBeforeTaxing(worksheet.Row(i));
+                            var row = worksheet.Row(i);
+                            worksheet.Cell(i, worksheet.LastColumnUsed().ColumnNumber()).Value = ComputeTotalBeforeTaxing(row);
+                            SumOfTotalAfterTaxing += row.Cell(7).GetDouble();
                         }
 
                         // Add new row for total
                         var totalRow = worksheet.LastRowUsed().RowNumber() + 1;
                         worksheet.Cell(totalRow, 1).Value = "Total";
-                        worksheet.Cell(totalRow, worksheet.LastColumnUsed().ColumnNumber()).Value = worksheet.Column(worksheet.LastColumnUsed().ColumnNumber()).CellsUsed().Sum(cell => cell.GetValue<double>());
+                        worksheet.Cell(totalRow, 7).Value = SumOfTotalAfterTaxing;
 
-                        // Save modified file
+                        workbook.SaveAs($"{uploadDirectory}\\Modified_{file.FileName}");
                         using (var memoryStream = new MemoryStream())
                         {
                             workbook.SaveAs(memoryStream);
+                            memoryStream.Position = 0;
                             return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ModifiedSheet.xlsx");
                         }
                     }
@@ -90,7 +95,7 @@ namespace ExcelAutomationTask.Controllers
 
             TotalAfterTaxing = row.Cell(7).GetDouble();
 
-            TaxingValue = row.Cell(5).GetDouble();
+            TaxingValue = row.Cell(8).GetDouble();
 
             TotalBeforeTaxing = TotalAfterTaxing - TaxingValue;
 
