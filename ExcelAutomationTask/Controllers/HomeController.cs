@@ -41,47 +41,51 @@ namespace ExcelAutomationTask.Controllers
         {
             if (file != null && file.Length > 0)
             {
-                var uploadDirectory = $"{Directory.GetCurrentDirectory()}\\wwwroot\\Uploads";
-
-                if (!Directory.Exists(uploadDirectory))
+                using (var memoryStream = new MemoryStream())
                 {
-                    Directory.CreateDirectory(uploadDirectory);
-                }
+                    await file.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
 
-                var filePath = Path.Combine(uploadDirectory, file.FileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create)) //var stream = new MemoryStream() if I Want it on the fly
-                {
-                    await file.CopyToAsync(stream);
-
-                    using (var workbook = new XLWorkbook(stream))
+                    using (var workbook = new XLWorkbook(memoryStream))
                     {
                         var worksheet = workbook.Worksheet(1);
+
                         double SumOfTotalAfterTaxing = 0;
+
                         // Add new column and compute values
-                        worksheet.Column(worksheet.LastColumnUsed().ColumnNumber() + 1).Cell(1).Value = "Total Value before Taxing";
+                        int lastColumn = worksheet.LastColumnUsed().ColumnNumber();
+
+                        IXLStyle style = worksheet.Cell(1, lastColumn).Style;
+                        worksheet.Cell(1, lastColumn + 1).Style = style;
+
+                        worksheet.Cell(1, ++lastColumn).Value = "Total Value before Taxing";
+                        IXLRow row;
+
                         for (int i = 2; i <= worksheet.LastRowUsed().RowNumber(); i++)
                         {
-                            var row = worksheet.Row(i);
-                            worksheet.Cell(i, worksheet.LastColumnUsed().ColumnNumber()).Value = ComputeTotalBeforeTaxing(row);
+                            row = worksheet.Row(i);
+                            worksheet.Cell(i, lastColumn).Style = style;
+                            worksheet.Cell(i, lastColumn).Value = ComputeTotalBeforeTaxing(row);
                             SumOfTotalAfterTaxing += row.Cell(7).GetDouble();
                         }
 
                         // Add new row for total
                         var totalRow = worksheet.LastRowUsed().RowNumber() + 1;
-                        worksheet.Cell(totalRow, 1).Value = "Total";
+
+                        worksheet.Cell(totalRow, 1).Value = "Total After Taxing";
+
                         worksheet.Cell(totalRow, 7).Value = SumOfTotalAfterTaxing;
 
-                        workbook.SaveAs($"{uploadDirectory}\\Modified_{file.FileName}");
-                        using (var memoryStream = new MemoryStream())
+                        using (var outputStream = new MemoryStream())
                         {
-                            workbook.SaveAs(memoryStream);
-                            memoryStream.Position = 0;
-                            return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Modified_{file.FileName}");
+                            workbook.SaveAs(outputStream);
+                            outputStream.Position = 0;
+                            return File(outputStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Modified_{file.FileName}");
                         }
                     }
                 }
             }
+
             return View();
         }
 

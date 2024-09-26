@@ -6,12 +6,19 @@ namespace ExcelAutomationTask
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+
+            #region Add services to the container.
+
             builder.Services.AddControllersWithViews();
+
+            #endregion
+
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+
+            #region Configure the HTTP request pipeline.
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -29,7 +36,10 @@ namespace ExcelAutomationTask
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
-
+            
+            #endregion
+            
+            
             app.Run();
         }
     }
